@@ -8,12 +8,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/animation.dart';
 
 // COMPONENTES
-import 'package:galaxy_force/game/components/player.dart';
-import 'package:galaxy_force/game/components/enemy.dart';
-import 'package:galaxy_force/game/components/bullet.dart';
+import 'components/player.dart';
+import 'components/enemy.dart';
+import 'components/bullet.dart';
 
 // HUD
-import 'package:galaxy_force/game/ui/lives_hud.dart';
+import 'ui/lives_hud.dart';
 
 class SpaceGame extends FlameGame
     with TapCallbacks, DragCallbacks, HasCollisionDetection {
@@ -29,7 +29,7 @@ class SpaceGame extends FlameGame
   int lives = 4;
   late LivesHud livesHud;
 
-  /// 🔒 Evita recibir doble daño
+  /// 🔒 Anti doble daño
   bool damageLock = false;
 
   @override
@@ -49,20 +49,17 @@ class SpaceGame extends FlameGame
       'hit.wav',
     ]);
 
-    // FONDO
-    add(
-      SpriteComponent(
-        sprite: Sprite(images.fromCache('background_space.jpg')),
-        size: size,
-        position: Vector2.zero(),
-        priority: -10,
-      ),
-    );
+    // Fondo
+    add(SpriteComponent(
+      sprite: Sprite(images.fromCache('background_space.jpg')),
+      size: size,
+      position: Vector2.zero(),
+      priority: -10,
+    ));
 
-    // PLAYER
+    // Player
     player = Player()..priority = 200;
     add(player);
-
     player.position = Vector2(size.x / 2, size.y - 120);
 
     // HUD
@@ -74,56 +71,53 @@ class SpaceGame extends FlameGame
     );
     add(livesHud);
 
-    // ENEMIGOS
+    // Enemigos
     _spawnWave();
 
     FlameAudio.loop('bgm.wav', volume: 0.3);
   }
 
-  // ======================================================
-  //     SISTEMA DE VIDA + RESPALDO SEGURO
-  // ======================================================
+  // ============================================================
+  //          SISTEMA DE VIDA + GAME OVER + RESPAWN
+  // ============================================================
   void loseLife() {
-    // 💥 Anti-doble daño
     if (damageLock) return;
     damageLock = true;
 
-    // Se desbloquea tras 200ms
-    Future.delayed(const Duration(milliseconds: 200), () {
+    Future.delayed(const Duration(milliseconds: 250), () {
       damageLock = false;
     });
 
     lives--;
-
     livesHud.refresh();
     shakeCamera();
 
+    // GAME OVER ✔
     if (lives <= 0) {
       Future.microtask(() {
         overlays.add("GameOver");
-        pauseEngine();
+        pauseEngine();                 // detiene juego
       });
-      return;
+      return; // No respawn
     }
 
-    // Limpia el área del player al reaparecer
+    // Limpia área peligrosa al respawnear
     for (final enemy in children.whereType<Enemy>()) {
       if ((enemy.position - player.position).length < 150) {
-        enemy.position.y -= 120; 
+        enemy.position.y -= 120;
       }
     }
-
     for (final bullet in children.whereType<Bullet>()) {
       if (!bullet.isPlayer) bullet.removeFromParent();
     }
 
-    // Respawn
+    // Respawn del jugador
     player.position = Vector2(size.x / 2, size.y - 120);
   }
 
-  // ======================================================
-  //     EFECTO DE SACUDIDA (CORRECTO)
-  // ======================================================
+  // ============================================================
+  //                    SACUDIDA
+  // ============================================================
   void shakeCamera() {
     camera.viewfinder.add(
       MoveByEffect(
@@ -138,9 +132,9 @@ class SpaceGame extends FlameGame
     );
   }
 
-  // ======================================================
-  //     GENERAR OLEADAS DE ENEMIGOS (FIX)
-  // ======================================================
+  // ============================================================
+  //                    OLEADAS FIX
+  // ============================================================
   void _spawnWave() {
     final rows = min(3 + level, 6);
     final cols = min(6 + level, 10);
@@ -166,9 +160,9 @@ class SpaceGame extends FlameGame
             onDestroyed: () {
               score.value += 10;
 
-              // 🔥 FIX: Si ya no hay enemigos, generar nueva oleada
+              // ✔ Nueva oleada automática solo si NO hay enemigos
               if (children.query<Enemy>().isEmpty) {
-                Future.delayed(const Duration(milliseconds: 300), () {
+                Future.delayed(const Duration(milliseconds: 400), () {
                   _spawnWave();
                 });
               }
@@ -179,9 +173,11 @@ class SpaceGame extends FlameGame
     }
   }
 
+  // Disparo
   @override
   void onTapDown(TapDownEvent event) => player.fire();
 
+  // Movimiento
   @override
   void onDragUpdate(DragUpdateEvent event) {
     player.position += event.localDelta;

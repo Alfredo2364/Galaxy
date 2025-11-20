@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import '../game/space_game.dart';
+import '../overlays/game_over_overlay.dart';
 
 class PlayPage extends StatelessWidget {
   final int level;
@@ -8,13 +9,26 @@ class PlayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final game = SpaceGame(level: level, onWin: () {
-      Navigator.pop(context, true);
-    });
+    final game = SpaceGame(
+      level: level,
+      onWin: () {
+        Navigator.pop(context, true);
+      },
+    );
+
     return Scaffold(
       body: Stack(
         children: [
-          GameWidget(game: game),
+          // 🎮 El juego
+          GameWidget(
+            game: game,
+            overlayBuilderMap: {
+              'GameOver': (context, game) =>
+                  GameOverOverlay.builder(context, game),
+            },
+          ),
+
+          // 🟣 Botón regresar + marcador
           SafeArea(
             child: Row(
               children: [
@@ -28,9 +42,15 @@ class PlayPage extends StatelessWidget {
                 const Spacer(),
                 ValueListenableBuilder<int>(
                   valueListenable: game.score,
-                  builder: (c, v, _) => Padding(
+                  builder: (_, value, __) => Padding(
                     padding: const EdgeInsets.only(right: 12.0),
-                    child: Chip(label: Text('Score: $v')),
+                    child: Chip(
+                      backgroundColor: Colors.black54,
+                      label: Text(
+                        'Score: $value',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
                 ),
               ],
