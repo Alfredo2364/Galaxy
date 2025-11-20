@@ -1,0 +1,42 @@
+name: galaxy_force
+description: "Juego móvil tipo Space Invaders con historia, lobby, tienda y niveles."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Flame (motor del juego)
+  flame: ^1.13.1
+
+  # Audio del juego
+  flame_audio: ^2.11.11
+
+  # Fuentes modernas
+  google_fonts: ^6.2.1
+
+  # Guardar progreso (skins, niveles, monedas)
+  shared_preferences: ^2.3.2
+
+  # Animaciones bonitas para menús y cinemáticas
+  flutter_animate: ^4.5.2
+
+  # Íconos iOS
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/audio/
